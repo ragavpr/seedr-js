@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Unofficial Seedr API for Node.js",
   "type": "module",
-  "module": "dist/index.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
