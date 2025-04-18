@@ -16,14 +16,18 @@
     "seedr-api"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --outDir dist --format cjs,esm --dts"
+    "build": "tsup src/index.ts --outDir dist --format cjs,esm --dts",
+    "release": "bun run build && changeset publish",
+    "lint": "tsc"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.2",
     "@types/bun": "latest",
-    "@types/fs-extra": "^11.0.4"
+    "@types/fs-extra": "^11.0.4",
+    "tsup": "^8.4.0"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "formdata-node": "^6.0.3",
