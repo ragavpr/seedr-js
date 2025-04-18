@@ -1,11 +1,33 @@
 {
-  "name": "seedr",
-  "module": "index.ts",
+  "name": "seedr-js",
+  "version": "0.9.0",
+  "description": "Unofficial Seedr API for Node.js",
   "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ragavpr/seedr-js"
+  },
+  "keywords": [
+    "seedr",
+    "seedrcc",
+    "seedr-api"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --outDir dist --format cjs,esm --dts"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/fs-extra": "^11.0.4"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "formdata-node": "^6.0.3",
+    "fs-extra": "^11.3.0",
+    "got": "^14.4.7"
   }
 }
