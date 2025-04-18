@@ -43,7 +43,9 @@ export class Seedr extends SeedrVanilla {
 
   async clearWishlist() {
     const wishlist = await this.getWishlist();
-    await Promise.all(wishlist.map((wish) => super.removeWishlist(wish.id)));
+    await Promise.all(
+      wishlist.map((wish) => super.deleteWishlistItem(wish.id))
+    );
   }
 
   renameFolder(id: number, name: string) {
@@ -70,7 +72,7 @@ export class Seedr extends SeedrVanilla {
   }
 
   async deleteAll() {
-    const folders = await this.listFolder('folder');
+    const folders = await this.list('folder');
     await this.delete({
       folder: folders.folders.map((i) => i.id),
       file: folders.files.map((i) => i.folder_file_id),

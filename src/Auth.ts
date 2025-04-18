@@ -172,7 +172,7 @@ export class Auth {
         console.log('Token expired');
       }
     }
-    if (this.#auth.xbmc && Date.now() < this.#auth.xbmc.expiry) {
+    if (this.#auth.xbmc && !(this.#auth.xbmc.expiry < Date.now())) {
       try {
         console.log('Refreshing Token with XBMC');
         await this.refreshTokenXBMC();
@@ -188,7 +188,8 @@ export class Auth {
       console.log('Logging in with OAuth');
       await this.loginOAuth();
     }
-    if (!this.#auth.access) throw new Error('Not initialized with state');
+    if (!this.#auth.access)
+      throw new Error('Not Logged in / Registered for the first time');
     return this.#auth.access?.token;
   }
 }

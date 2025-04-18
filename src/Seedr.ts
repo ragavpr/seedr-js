@@ -69,7 +69,7 @@ export class Seedr {
     return this.callFunc<T.RScanResults>('scan_page', { url });
   }
 
-  listFolder(content_type: 'folder', id?: number) {
+  list(content_type: 'folder' | 'torrent' = 'folder', id?: number) {
     const body: Record<string, unknown> = { content_type };
     if (id) body.content_id = id;
     return this.callFunc<T.RFolderDetails>('list_contents', body);
@@ -103,8 +103,8 @@ export class Seedr {
     });
   }
 
-  removeWishlist(id: number) {
-    return this.callFunc('remove_wishlist', { id });
+  deleteWishlistItem(id: number) {
+    return this.callFunc<{ result: true }>('remove_wishlist', { id });
   }
 
   testToken() {
