@@ -7,8 +7,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/seedr-js)](https://www.npmjs.com/package/seedr-js)
 [![GitHub Release Date](https://img.shields.io/github/release-date/ragavpr/seedr-js)](https://github.com/ragavpr/seedr-js/releases/latest)
-
-<!-- ![visitors](https://visitor-badge.laobi.icu/badge?page_id=ragavpr.seedr-js) -->
+![visitors](https://visitor-badge.laobi.icu/badge?page_id=ragavpr.seedr-js)
 
 </div>
 
