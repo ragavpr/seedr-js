@@ -1,5 +1,11 @@
 # seedr-js
 
+## 1.0.2
+
+### Patch Changes
+
+- 3a7a138: Publish to Github Packages
+
 ## 1.0.1
 
 ### Patch Changes
