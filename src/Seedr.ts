@@ -107,6 +107,22 @@ export class Seedr {
   }
 
   /**
+   * Adds a torrent from an existing wishlist item.
+   * @param {number} wishlist_id - The Wishlist item ID.
+   * @param {number} [folder_id] - Optional ID of the folder to download the torrent into (defaults to root).
+   * @returns {Promise<T.RAddTorrent>} Promise resolves if the torrent is added / saved in wishlist.
+   */
+  addTorrentFromWishlist(
+    wishlist_id: number,
+    folder_id?: number
+  ): Promise<T.RAddTorrent> {
+    return this.callFunc<T.RAddTorrent>('add_torrent', {
+      wishlist_id,
+      folder_id,
+    });
+  }
+
+  /**
    * Scans a webpage for magnet links or .torrent file links.
    * @param {string} url - The URL of the page to scan.
    * @returns {Promise<T.RScanResults>} Promise resolving the scan results.
