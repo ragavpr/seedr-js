@@ -13,8 +13,7 @@ export class Auth {
 
   /**
    * Creates an instance of `Auth`.
-   *
-   * @param {T.IStore} [store] - State persistence handler for authentication tokens. Defaults to `NoPersistence`.
+   * @param {T.IStore} store - Auth State persistence handler.
    */
   constructor(store: T.IStore) {
     this.#store = store;
@@ -24,10 +23,9 @@ export class Auth {
    * Initiates an OAuth login process.
    * Can optionally accept `username` and `password`, if those are not already set in `state.credentials`.
    * Obtains both Access and Refresh Tokens.
-   *
    * @param {string} [username] - Email for login (optional).
    * @param {string} [password] - Password for login (optional).
-   * @param {boolean} [save=false] - Whether to save login credentials persistently. Defaults to false.
+   * @param {boolean} [save=false] - Whether to save the login credentials. Defaults to false.
    * @returns {Promise<T.RTokenFetch>} Promise resolving new Access and Refresh tokens.
    * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
    */
@@ -85,7 +83,6 @@ export class Auth {
 
   /**
    * Obtains a new Access Token with Refresh Token if it exists.
-   *
    * @returns {Promise<T.RTokenRefresh>} Promise resolving new Access Token.
    * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
    */
@@ -120,7 +117,6 @@ export class Auth {
   /**
    * Initial Flow to Register XBMC device with Seedr.
    * Use the generated code to authorize in https://www.seedr.cc/devices
-   *
    * @returns {Promise<T.RDeviceGen>} Promise resolving newly generated XBMC Code.
    * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
    */
@@ -161,7 +157,6 @@ export class Auth {
   /**
    * Refreshes Access Token (XBMC) using Device Code.
    * Obtains a new long validity Access Token.
-   *
    * @returns {Promise<T.RTokenRefresh>} Promise resolving new Access Token.
    * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
    */
@@ -200,7 +195,6 @@ export class Auth {
 
   /**
    * Makes sure an Access Token is available and valid, if not attempts to get a new one.
-   *
    * @returns {Promise<string>} Promise resolving new Access Token.
    * @throws {Error} If an existing token is invalid and a new Access Token cannot be obtained.
    */
