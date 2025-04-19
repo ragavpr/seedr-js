@@ -1,12 +1,12 @@
 import * as T from './types';
-import { Seedr as SeedrVanilla } from './Seedr';
+import { Seedr } from './Seedr';
 
 /**
  * Provides methods for interacting with the Seedr API.
  * Extends the base Seedr class, providing additional convenience methods.
- * @extends {SeedrVanilla}
+ * @extends {Seedr}
  */
-export class Seedr extends SeedrVanilla {
+export class SeedrExtended extends Seedr {
   /**
    * Adds a torrent using a magnet link, torrent URL, torrent file, or wishlist item ID.
    * Note: `folder_id` is ignored when uploading a `torrent_file`.
