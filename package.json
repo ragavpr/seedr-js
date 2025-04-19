@@ -1,5 +1,5 @@
 {
-  "name": "seedr-js",
+  "name": "@ragavpr/seedr-js",
   "version": "1.0.1",
   "description": "Unofficial Seedr API for Node.js",
   "type": "module",
