@@ -4,19 +4,39 @@ import got from 'got';
 
 const ENDPOINT = 'https://www.seedr.cc';
 
+/**
+ * Handles authentication and manages tokens for Seedr.
+ */
 export class Auth {
-  #state: T.IState;
+  #store: T.IStore;
   #auth?: T.AuthState;
-  constructor(state: T.IState) {
-    this.#state = state;
+
+  /**
+   * Creates an instance of `Auth`.
+   *
+   * @param {T.IStore} [store] - State persistence handler for authentication tokens. Defaults to `NoPersistence`.
+   */
+  constructor(store: T.IStore) {
+    this.#store = store;
   }
 
+  /**
+   * Initiates an OAuth login process.
+   * Can optionally accept `username` and `password`, if those are not already set in `state.credentials`.
+   * Obtains both Access and Refresh Tokens.
+   *
+   * @param {string} [username] - Email for login (optional).
+   * @param {string} [password] - Password for login (optional).
+   * @param {boolean} [save=false] - Whether to save login credentials persistently. Defaults to false.
+   * @returns {Promise<T.RTokenFetch>} Promise resolving new Access and Refresh tokens.
+   * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
+   */
   async loginOAuth(
     username?: string,
     password?: string,
     save: boolean = false
-  ) {
-    if (!this.#auth) this.#auth = await this.#state.load();
+  ): Promise<T.RTokenFetch> {
+    if (!this.#auth) this.#auth = await this.#store.load();
     username = this.#auth.credential?.username ?? username;
     password = this.#auth.credential?.password ?? password;
 
@@ -26,8 +46,7 @@ export class Auth {
 
     if (this.#auth.access) {
       if (Date.now() < this.#auth.access.expiry) {
-        console.warn('Valid Token already exists');
-        return;
+        throw new Error('Valid Token already exists');
       }
     }
     const response = await got.post<T.Either<T.RTokenFetch, T.SeedrError>>(
@@ -60,15 +79,20 @@ export class Auth {
     this.#auth.refresh = {
       token: response.body.refresh_token,
     };
-    await this.#state.save(this.#auth);
+    await this.#store.save(this.#auth);
     return response.body;
   }
 
-  async refreshTokenOAuth() {
-    if (!this.#auth) this.#auth = await this.#state.load();
+  /**
+   * Obtains a new Access Token with Refresh Token if it exists.
+   *
+   * @returns {Promise<T.RTokenRefresh>} Promise resolving new Access Token.
+   * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
+   */
+  async refreshTokenOAuth(): Promise<T.RTokenRefresh> {
+    if (!this.#auth) this.#auth = await this.#store.load();
     if (!this.#auth.refresh) {
-      console.warn("Refresh Token doesn't exist, try obtaining new ones");
-      return;
+      throw new Error('Attempted to refresh without refresh token');
     }
     const response = await got.post<T.Either<T.RTokenRefresh, T.SeedrError>>(
       `${ENDPOINT}/oauth_test/token.php`,
@@ -89,23 +113,29 @@ export class Auth {
       token: response.body.access_token,
       expiry: response.body.expires_in * 1000 + Date.now(),
     };
-    await this.#state.save(this.#auth);
+    await this.#store.save(this.#auth);
     return response.body;
   }
 
-  async obtainDeviceCode() {
-    if (!this.#auth) this.#auth = await this.#state.load();
+  /**
+   * Initial Flow to Register XBMC device with Seedr.
+   * Use the generated code to authorize in https://www.seedr.cc/devices
+   *
+   * @returns {Promise<T.RDeviceGen>} Promise resolving newly generated XBMC Code.
+   * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
+   */
+  async obtainDeviceCode(): Promise<T.RDeviceGen> {
+    if (!this.#auth) this.#auth = await this.#store.load();
     if (this.#auth.xbmc) {
       if (Date.now() < this.#auth.xbmc.expiry) {
-        console.warn(
-          `Authorize Device by visiting https://www.seedr.cc/devices and entering the following code: ${
+        throw new Error(
+          `Device code is valid, yet to be authorized, use ${
             this.#auth.xbmc.user_code
-          }`
+          } in https://www.seedr.cc/devices`
         );
       } else {
-        console.warn('Device Code already registered');
+        throw new Error('Device Code already registered');
       }
-      return;
     }
     const response = await got.get<T.Either<T.RDeviceGen, unknown>>(
       `${ENDPOINT}/api/device/code`,
@@ -124,15 +154,21 @@ export class Auth {
       user_code: response.body.user_code,
       expiry: response.body.expires_in * 1000 + Date.now(),
     };
-    await this.#state.save(this.#auth);
+    await this.#store.save(this.#auth);
     return response.body;
   }
 
-  async refreshTokenXBMC() {
-    if (!this.#auth) this.#auth = await this.#state.load();
+  /**
+   * Refreshes Access Token (XBMC) using Device Code.
+   * Obtains a new long validity Access Token.
+   *
+   * @returns {Promise<T.RTokenRefresh>} Promise resolving new Access Token.
+   * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
+   */
+  async refreshTokenXBMC(): Promise<T.RTokenRefresh> {
+    if (!this.#auth) this.#auth = await this.#store.load();
     if (!this.#auth.xbmc) {
-      console.warn('No device code, generate code and authorize');
-      return;
+      throw new Error('No device code, generate code and authorize');
     }
     const response = await got.get<T.Either<T.RTokenRefresh, T.SeedrError>>(
       'https://www.seedr.cc/api/device/authorize',
@@ -145,12 +181,11 @@ export class Auth {
       }
     );
     if (response.body.error == 'authorization_pending') {
-      console.warn(
-        `Verify Device here https://www.seedr.cc/devices\nuser_code: ${
+      throw new Error(
+        `Device code is valid, yet to be authorized, use ${
           this.#auth.xbmc.user_code
-        }`
+        } in https://www.seedr.cc/devices`
       );
-      throw new Error('Authorization Pending');
     } else
       Object.assign(this.#auth.xbmc, {
         expiry: undefined,
@@ -159,37 +194,54 @@ export class Auth {
       token: response.body.access_token,
       expiry: Date.now() + response.body.expires_in * 1000,
     };
-    await this.#state.save(this.#auth);
+    await this.#store.save(this.#auth);
     return response.body;
   }
 
-  async getAccessToken() {
-    if (!this.#auth) this.#auth = await this.#state.load();
+  /**
+   * Makes sure an Access Token is available and valid, if not attempts to get a new one.
+   *
+   * @returns {Promise<string>} Promise resolving new Access Token.
+   * @throws {Error} If an existing token is invalid and a new Access Token cannot be obtained.
+   */
+  async getAccessToken(): Promise<string> {
+    if (!this.#auth) this.#auth = await this.#store.load();
     if (this.#auth.access) {
       if (Date.now() < this.#auth.access?.expiry) {
         return this.#auth.access.token;
       } else {
-        console.log('Token expired');
+        console.warn('Token expired');
       }
     }
     if (this.#auth.xbmc && !(this.#auth.xbmc.expiry < Date.now())) {
+      console.log('Refreshing Token with XBMC');
       try {
-        console.log('Refreshing Token with XBMC');
         await this.refreshTokenXBMC();
       } catch (e) {
-        console.warn('XBMC Configured, but invalid');
+        console.warn(`Refresh (XBMC) failed: ${(e as Error).message}`);
       }
     }
     if (this.#auth.refresh) {
       console.log('Refreshing Token with OAuth');
-      await this.refreshTokenOAuth();
+      try {
+        await this.refreshTokenOAuth();
+      } catch (e) {
+        console.warn(`Refresh failed: ${(e as Error).message}`);
+      }
     }
     if (this.#auth.credential) {
       console.log('Logging in with OAuth');
-      await this.loginOAuth();
+      try {
+        await this.loginOAuth();
+      } catch (e) {
+        console.warn(`Login failed: ${(e as Error).message}`);
+      }
     }
-    if (!this.#auth.access)
-      throw new Error('Not Logged in / Registered for the first time');
-    return this.#auth.access?.token;
+    if (!this.#auth.access) {
+      throw new Error(
+        'Not Logged in / Registered for the first time, use loginOAuth() or obtainDeviceCode() with persistence'
+      );
+    }
+    return this.#auth.access.token;
   }
 }

@@ -2,7 +2,7 @@ import * as T from './types';
 
 import fs from 'fs-extra';
 
-export class NoPersistence implements T.IState {
+export class NoPersistence implements T.IStore {
   state: T.AuthState;
 
   constructor(state?: T.AuthState) {
@@ -18,7 +18,7 @@ export class NoPersistence implements T.IState {
   }
 }
 
-export class FilePersistence implements T.IState {
+export class FilePersistence implements T.IStore {
   path: string;
 
   constructor(path: string) {

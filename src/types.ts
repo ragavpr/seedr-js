@@ -31,7 +31,7 @@ export type RTokenRefresh = {
   scope?: string;
 };
 
-export interface IState {
+export interface IStore {
   save(state: AuthState): void | Promise<void>;
   load(): AuthState | Promise<AuthState>;
 }

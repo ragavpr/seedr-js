@@ -11,8 +11,8 @@ const ENDPOINT = 'https://www.seedr.cc';
 
 export class Seedr {
   auth: Auth;
-  constructor(state?: T.IState) {
-    this.auth = new Auth(state ?? new NoPersistence());
+  constructor(store?: T.IStore) {
+    this.auth = new Auth(store ?? new NoPersistence());
   }
 
   protected async callFunc<T>(
