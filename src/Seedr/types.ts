@@ -1,7 +1,3 @@
-export type Either<L, R> =
-  | ({ [K in keyof L]: L[K] } & { [K in keyof R]: never })
-  | ({ [K in keyof L]: never } & { [K in keyof R]: R[K] });
-
 export type SeedrAuthError = {
   error: string;
   error_description: string;

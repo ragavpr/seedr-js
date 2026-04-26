@@ -1,11 +1,9 @@
 import * as T from './types';
-import { NoPersistence } from './State';
-import { Auth } from './Auth';
+import { NoPersistence } from './Persistence/State';
+import { Auth } from './Auth/Auth';
 
-import fs from 'fs';
-import path from 'path';
 import got, { HTTPError } from 'got';
-import { FormData, File } from 'formdata-node';
+import { FormData } from 'formdata-node';
 
 const ENDPOINT_API = 'https://www.seedr.cc/api/resource';
 
@@ -151,7 +149,6 @@ export class Seedr {
     return this.callFunc<T.RSearchResults>('search_files', { search_query });
   }
 
-  // TODO: Handle direct download of the file
   /**
    * Fetches the direct download URL for a file.
    * @param {number} folder_file_id - The ID of the file (note: this is `folder_file_id` from the `list` results, not `file_id`).

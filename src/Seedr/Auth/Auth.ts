@@ -1,4 +1,4 @@
-import * as T from './types';
+import * as T from '../types';
 
 import inquirer from 'inquirer';
 import got, { HTTPError } from 'got';

@@ -1,4 +1,4 @@
-import * as T from './types';
+import * as T from '../types';
 
 import fs from 'fs-extra';
 
