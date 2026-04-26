@@ -2,9 +2,19 @@ export type Either<L, R> =
   | ({ [K in keyof L]: L[K] } & { [K in keyof R]: never })
   | ({ [K in keyof L]: never } & { [K in keyof R]: R[K] });
 
-export type SeedrError = {
+export type SeedrAuthError = {
   error: string;
   error_description: string;
+};
+
+export type SeedrApiError = {
+  status_code: number;
+  reason_phrase: string;
+};
+
+export type SeedrAccessError = {
+  result: boolean;
+  error: string;
 };
 
 export type SeedrSuccess = {
@@ -19,8 +29,8 @@ export type RTokenFetch = RTokenRefresh & {
 export type RTokenRefresh = {
   access_token: string;
   expires_in: number;
-  token_type: string;
-  scope?: string;
+  token_type: 'Bearer' | string;
+  scope: null;
 };
 
 export interface IStore {

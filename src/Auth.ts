@@ -1,7 +1,7 @@
 import * as T from './types';
 
 import inquirer from 'inquirer';
-import got from 'got';
+import got, { HTTPError } from 'got';
 
 const ENDPOINT_AUTH = 'https://www.seedr.cc/api/token';
 const TIME_BUFFER = 10000; //ms
@@ -34,9 +34,8 @@ export class Auth {
   async loginOAuth(username: string, password: string): Promise<T.RTokenFetch> {
     if (!this.#auth) this.#auth = await this.#store.load();
 
-    const response = await got.post<T.Either<T.RTokenFetch, T.SeedrError>>(
-      ENDPOINT_AUTH,
-      {
+    try {
+      const response = await got.post<T.RTokenFetch>(ENDPOINT_AUTH, {
         form: {
           client_id: 'seedr_chrome',
           type: 'login',
@@ -45,25 +44,27 @@ export class Auth {
           password,
         },
         responseType: 'json',
-        throwHttpErrors: false,
+      });
+
+      this.#auth.oauth = {
+        access: {
+          token: response.body.access_token,
+          expiry: response.body.expires_in * 1000 + Date.now() - TIME_BUFFER,
+        },
+        refresh: {
+          token: response.body.refresh_token,
+        },
+      };
+
+      await this.#store.save(this.#auth);
+      return response.body;
+    } catch (error: any) {
+      if ('response' in error) {
+        const http_error: HTTPError<T.SeedrAuthError> = error;
+        throw new Error(http_error.response.body.error_description);
       }
-    );
-    if (response.statusCode != 200) {
-      throw new Error(response.body.error_description);
+      throw error;
     }
-
-    this.#auth.oauth = {
-      access: {
-        token: response.body.access_token,
-        expiry: response.body.expires_in * 1000 + Date.now() - TIME_BUFFER,
-      },
-      refresh: {
-        token: response.body.refresh_token,
-      },
-    };
-
-    await this.#store.save(this.#auth);
-    return response.body;
   }
 
   /**
@@ -78,29 +79,30 @@ export class Auth {
       throw new Error('Attempted to refresh without refresh token');
     }
 
-    const response = await got.post<T.Either<T.RTokenRefresh, T.SeedrError>>(
-      ENDPOINT_AUTH,
-      {
+    try {
+      const response = await got.post<T.RTokenRefresh>(ENDPOINT_AUTH, {
         form: {
           client_id: 'seedr_chrome',
           grant_type: 'refresh_token',
           refresh_token: this.#auth.oauth.refresh.token,
         },
         responseType: 'json',
-        throwHttpErrors: false,
+      });
+
+      this.#auth.oauth.access = {
+        token: response.body.access_token,
+        expiry: response.body.expires_in * 1000 + Date.now() - TIME_BUFFER,
+      };
+
+      await this.#store.save(this.#auth);
+      return response.body;
+    } catch (error: any) {
+      if ('response' in error) {
+        const http_error: HTTPError<T.SeedrAuthError> = error;
+        throw new Error(http_error.response.body.error_description);
       }
-    );
-    if (response.statusCode != 200) {
-      throw new Error(response.body.error_description);
+      throw error;
     }
-
-    this.#auth.oauth.access = {
-      token: response.body.access_token,
-      expiry: response.body.expires_in * 1000 + Date.now() - TIME_BUFFER,
-    };
-
-    await this.#store.save(this.#auth);
-    return response.body;
   }
 
   /**
@@ -115,7 +117,7 @@ export class Auth {
   ): Promise<string> {
     if (!this.#auth) this.#auth = await this.#store.load();
 
-    if (Date.now() < (this.#auth.oauth?.access?.expiry ?? 0)) {
+    if (this.#auth.oauth && Date.now() < this.#auth.oauth?.access?.expiry) {
       throw new Error('Valid Token already exists');
     }
 
@@ -196,8 +198,8 @@ export class Auth {
   ): Promise<string> {
     if (!this.#auth) this.#auth = await this.#store.load();
 
-    if (Date.now() < (this.#auth.oauth?.access?.expiry ?? 0)) {
-      return this.#auth.oauth!.access.token;
+    if (this.#auth.oauth && Date.now() < this.#auth.oauth?.access?.expiry) {
+      return this.#auth.oauth.access.token;
     } else {
       console.warn('Token expired');
     }

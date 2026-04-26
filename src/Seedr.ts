@@ -4,10 +4,10 @@ import { Auth } from './Auth';
 
 import fs from 'fs';
 import path from 'path';
-import got from 'got';
+import got, { HTTPError } from 'got';
 import { FormData, File } from 'formdata-node';
 
-const ENDPOINT = 'https://www.seedr.cc';
+const ENDPOINT_API = 'https://www.seedr.cc/api/resource';
 
 /**
  * Provides methods for interacting with the Seedr API.
@@ -38,27 +38,34 @@ export class Seedr {
     form?: Record<string, unknown>,
     body?: FormData
   ): Promise<T> {
-    const token = await this.auth.getAccessToken();
-    const response = await got.post<T.Either<T, T.SeedrError>>(
-      `${ENDPOINT}/oauth_test/resource.php`,
-      {
-        searchParams: { func },
-        body,
-        form,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const access_token = await this.auth.getAccessToken();
+    try {
+      const response = await got.post<T>(ENDPOINT_API, {
         responseType: 'json',
-        throwHttpErrors: false,
+        form: {
+          func,
+          access_token,
+          ...form,
+        },
+        body,
+      });
+      return response.body;
+    } catch (error: any) {
+      const http_error: HTTPError<T.SeedrApiError | T.SeedrAccessError> = error;
+      if ('response' in error) {
+        if ('result' in http_error.response.body) {
+          if (http_error.response.statusCode == 401) {
+            if (http_error.response.body.error == 'access_denied') {
+              await this.auth.expireAccessToken();
+              return await this.callFunc(func, form, body);
+            }
+          }
+        } else {
+          throw new Error(http_error.response.body.reason_phrase);
+        }
       }
-    );
-    if (response.statusCode !== 200 || response.body.error)
-      throw new Error(
-        `Unexpected Response (${response.statusCode}): ${JSON.stringify(
-          response.body
-        )}`
-      );
-    return response.body;
+      throw error;
+    }
   }
 
   /**
