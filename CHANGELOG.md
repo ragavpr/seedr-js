@@ -1,5 +1,11 @@
 # seedr-js
 
+## 1.2.1
+
+### Patch Changes
+
+- a222646: Patch type mismatch and `ReadMe`
+
 ## 1.2.0
 
 ### Minor Changes
