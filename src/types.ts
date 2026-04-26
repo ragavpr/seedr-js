@@ -8,7 +8,7 @@ export type SeedrAuthError = {
 };
 
 export type SeedrApiError = {
-  status_code: number;
+  status_code?: number;
   reason_phrase: string;
 };
 
@@ -18,8 +18,8 @@ export type SeedrAccessError = {
 };
 
 export type SeedrSuccess = {
-  result: boolean;
-  code?: number;
+  success: boolean;
+  // code?: number;
 };
 
 export type RTokenFetch = RTokenRefresh & {
@@ -57,34 +57,42 @@ export type AuthState = {
 
 export type Folder = {
   id: number;
+  path: string;
+  size: number;
+  last_update: string;
   name: string;
   fullname: string;
-  size: number;
-  play_audio: boolean;
-  play_video: boolean;
-  is_shared: boolean;
-  last_update: string;
+  // play_audio?: boolean;
+  // play_video?: boolean;
+  // is_shared?: boolean;
 };
 
 export type File = {
+  id: number;
   name: string;
   size: number;
   hash: string;
   folder_id: number;
-  folder_file_id: number;
-  file_id: number;
   last_update: string;
-  play_audio: boolean;
-  play_video: boolean;
-  video_progress: string;
-  is_lost: number;
+  is_audio: boolean;
+  is_video: boolean;
+  presentation_urls: {
+    image: Record<string, string>;
+    video: Record<string, string>;
+  };
   thumb: string;
+  folder_file_id: number; // id
+  play_video: boolean;
+  play_audio: boolean;
+  stream_video: boolean;
+  stream_audio: boolean;
+  // video_progress?: string;
+  // is_lost?: number;
 };
 
 export type Torrent = {
   id: number;
   name: string;
-  folder: string;
   size: number;
   hash: string;
   download_rate: number;
@@ -94,39 +102,77 @@ export type Torrent = {
   uploading_to: number;
   seeders: number;
   leechers: number;
-  warnings: null | any;
+  warnings: unknown[];
   stopped: number;
-  progress: string;
+  progress: number;
   progress_url: string;
-  last_update: string;
+  last_update: string; //DateTime
 };
+
+export type Task = Record<string, unknown>;
 
 export type RAddTorrent = SeedrSuccess & {
   user_torrent_id: number;
   title: string;
+  success: boolean;
   torrent_hash: string;
 };
 
-export type RFolderDetails = {
+export type HProgress = {
+  title: string;
+  size: number;
+  download_rate: number;
+  torrent_quality: number;
+  warnings: unknown[];
+  stats: {
+    torrent_hash: string;
+    progress: number;
+    title: string;
+    downloading_from: number;
+    uploading_to: number;
+    warnings: unknown[];
+    stopped: number;
+    folder_created: number;
+    download_rate: number;
+    size: number;
+    torrent_quality: number;
+    seeders: number;
+    leechers: number;
+    seed_ratio: number;
+  };
+  stopped: number;
+  progress: number;
+  hash: string;
+  folder_created: number;
+  files_progress: unknown[];
+};
+
+export type RListingDetails = {
   space_max: number;
   space_used: number;
+  space_scope: 'user' | string;
   saw_walkthrough: number;
-  t: number[];
+  id: number;
+  // t?: number[];
   timestamp: string;
-  folder_id: number;
-  fullname: string;
-  type: 'folder' | 'file' | 'torrent';
-  name: string;
+  path: string;
+  size: number;
   parent: number;
-  indexes: number[];
-  torrents: Torrent[];
   folders: Folder[];
   files: File[];
+  torrents: Torrent[];
+  tasks: Task[];
+  // folder_id?: number;
+  // fullname?: string;
+  // type?: 'folder' | 'file' | 'torrent' | string;
+  // name?: string;
+  // indexes?: number[];
 };
 
 export type RFetchFile = SeedrSuccess & {
   url: string;
   name: string;
+  result: boolean;
 };
 
 export type WishlistItem = {
@@ -136,7 +182,7 @@ export type WishlistItem = {
   size: number;
   torrent_hash: string;
   torrent_magnet: string;
-  torrent_meta: string;
+  // torrent_meta?: string;
   created: string;
   added: number;
   is_private: number;
@@ -144,18 +190,19 @@ export type WishlistItem = {
 
 export type UserAccount = {
   username: string;
+  email: string;
   user_id: number;
-  premium: number;
-  package_id: number;
-  package_name: string;
+  premium: boolean;
   space_used: number;
   space_max: number;
+  space_scope: 'user' | string;
   bandwidth_used: number;
-  email: string;
+  package_id: number;
+  package_name: 'NON-PREMIUM' | string;
   wishlist: WishlistItem[];
   invites: number;
   invites_accepted: number;
-  max_invites: number;
+  // max_invites?: number;
 };
 
 export type AccountSettings = {
@@ -172,40 +219,41 @@ export type RAccountSettings = SeedrSuccess & {
   country: string;
 };
 
-export type RMemoryBandwidth = {
+export type RMemoryBandwidth = SeedrSuccess & {
   bandwidth_used: number;
   bandwidth_max: number;
   space_used: number;
   space_max: number;
-  is_premium: number;
+  space_scope: 'user' | string;
+  is_premium: boolean;
 };
 
-export type RScanResults = SeedrSuccess & {
-  torrents: {
-    hash: string;
-    magnet: string;
-    filenames?: string[];
-    filesizes?: number[];
-    title: string;
-    size?: number;
-    is_private: boolean;
-    pct: number;
-  }[];
-};
+// export type RScanResults = SeedrSuccess & {
+//   torrents: {
+//     hash: string;
+//     magnet: string;
+//     filenames?: string[];
+//     filesizes?: number[];
+//     title: string;
+//     size?: number;
+//     is_private: boolean;
+//     pct: number;
+//   }[];
+// };
 
 export type RDevices = SeedrSuccess & {
   devices: {
     client_id: string;
     client_name: string;
     device_code: string;
-    tk: string;
+    tk: string | null;
   }[];
 };
 
-export type RCreateArchive = SeedrSuccess & {
-  archive_id: number;
-  archive_url: string;
-};
+// export type RCreateArchive = SeedrSuccess & {
+//   archive_id: number;
+//   archive_url: string;
+// };
 
 export type RSearchResults = {
   max_space: number;

@@ -24,16 +24,15 @@ export class Seedr {
   }
 
   /**
-   * Internal method to make authenticated calls to the Seedr Resource API.
-   * @protected
+   * Method to make authenticated calls to the Seedr Resource API.
    * @template T The expected successful response type.
    * @param {string} func - Seedr API function name.
    * @param {Record<string, unknown>} [form] - (optional) Arguments sent in form.
    * @param {FormData} [body] - (optional) Arguments sent in body.
    * @returns {Promise<T>} Promise resolving the response JSON.
-   * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
+   * @throws {Error} If the API returns a 4xx or 5xx status code with error message or any other error.
    */
-  protected async callFunc<T>(
+  async callFunc<T>(
     func: string,
     form?: Record<string, unknown>,
     body?: FormData
@@ -41,6 +40,7 @@ export class Seedr {
     const access_token = await this.auth.getAccessToken();
     try {
       const response = await got.post<T>(ENDPOINT_API, {
+        followRedirect: false,
         responseType: 'json',
         form: {
           func,
@@ -52,15 +52,22 @@ export class Seedr {
       return response.body;
     } catch (error: any) {
       const http_error: HTTPError<T.SeedrApiError | T.SeedrAccessError> = error;
-      if ('response' in error) {
+      if ('response' in error && http_error.response?.body !== undefined) {
         if ('result' in http_error.response.body) {
-          if (http_error.response.statusCode == 401) {
-            if (http_error.response.body.error == 'access_denied') {
-              await this.auth.expireAccessToken();
-              return await this.callFunc(func, form, body);
-            }
+          switch (http_error.response.statusCode) {
+            case 401:
+              if (http_error.response.body.error == 'access_denied') {
+                await this.auth.expireAccessToken();
+                return await this.callFunc(func, form, body);
+              }
+              break;
+            case 404:
+              throw new Error(`404 - No such function exists: ${func}`);
+            default:
+              throw new Error(http_error.message);
           }
         } else {
+          console.log(http_error.response.body);
           throw new Error(http_error.response.body.reason_phrase);
         }
       }
@@ -71,86 +78,68 @@ export class Seedr {
   /**
    * Adds a torrent using a magnet link.
    * @param {string} torrent_magnet - The magnet URI.
-   * @param {number} [folder_id] - (optional) ID of the folder to download the torrent into (defaults to root).
    * @returns {Promise<T.RAddTorrent>} Promise resolves if the torrent is added / saved in wishlist.
    */
-  addTorrentMagnet(
-    torrent_magnet: string,
-    folder_id?: number
-  ): Promise<T.RAddTorrent> {
+  addTorrentMagnet(torrent_magnet: string): Promise<T.RAddTorrent> {
     return this.callFunc<T.RAddTorrent>('add_torrent', {
       torrent_magnet,
-      folder_id,
     });
   }
 
   /**
    * Adds a torrent using a URL pointing to a .torrent file.
    * @param {string} torrent_url - The URL of the .torrent file.
-   * @param {number} [folder_id] - Optional ID of the folder to download the torrent into (defaults to root).
    * @returns {Promise<T.RAddTorrent>} Promise resolves if the torrent is added / saved in wishlist.
    */
-  addTorrentURL(
-    torrent_url: string,
-    folder_id?: number
-  ): Promise<T.RAddTorrent> {
+  addTorrentURL(torrent_url: string): Promise<T.RAddTorrent> {
     return this.callFunc<T.RAddTorrent>('add_torrent', {
       torrent_url,
-      folder_id,
     });
   }
 
-  /**
-   * Adds a torrent by uploading a .torrent file.
-   * @param {string} torrent_file - The local path to the .torrent file.
-   * @returns {Promise<T.RAddTorrent>} Promise resolves if the torrent is added / saved in wishlist.
-   */
-  addTorrentFile(torrent_file: string): Promise<T.RAddTorrent> {
-    const bytes = fs.readFileSync(torrent_file);
-    const form = new FormData();
-    // form.set('folder_id', folder_id)
-    form.set('torrent_file', new File([bytes], path.basename(torrent_file)));
-    return this.callFunc<T.RAddTorrent>('add_torrent', undefined, form);
-  }
+  // // DISABLED: low priority, insufficient testing with changed callFunc, convert local file to magnet and add.
+  // /**
+  //  * Adds a torrent by uploading a .torrent file.
+  //  * @param {string} torrent_file - The local path to the .torrent file.
+  //  * @returns {Promise<T.RAddTorrent>} Promise resolves if the torrent is added / saved in wishlist.
+  //  */
+  // addTorrentFile(torrent_file: string): Promise<T.RAddTorrent> {
+  //   const bytes = fs.readFileSync(torrent_file);
+  //   const form = new FormData();
+  //   form.set('torrent_file', new File([bytes], path.basename(torrent_file)));
+  //   return this.callFunc<T.RAddTorrent>('add_torrent', undefined, form);
+  // }
 
   /**
    * Adds a torrent from an existing wishlist item.
    * @param {number} wishlist_id - The Wishlist item ID.
-   * @param {number} [folder_id] - Optional ID of the folder to download the torrent into (defaults to root).
    * @returns {Promise<T.RAddTorrent>} Promise resolves if the torrent is added / saved in wishlist.
    */
-  addTorrentFromWishlist(
-    wishlist_id: number,
-    folder_id?: number
-  ): Promise<T.RAddTorrent> {
+  addTorrentFromWishlist(wishlist_id: number): Promise<T.RAddTorrent> {
     return this.callFunc<T.RAddTorrent>('add_torrent', {
       wishlist_id,
-      folder_id,
     });
   }
 
-  /**
-   * Scans a webpage for magnet links or .torrent file links.
-   * @param {string} url - The URL of the page to scan.
-   * @returns {Promise<T.RScanResults>} Promise resolving the scan results.
-   */
-  scanPage(url: string): Promise<T.RScanResults> {
-    return this.callFunc<T.RScanResults>('scan_page', { url });
-  }
+  // // DISABLED: func not found
+  // /**
+  //  * Scans a webpage for magnet links or .torrent file links.
+  //  * @param {string} url - The URL of the page to scan.
+  //  * @returns {Promise<T.RScanResults>} Promise resolving the scan results.
+  //  */
+  // scanPage(url: string): Promise<T.RScanResults> {
+  //   return this.callFunc<T.RScanResults>('scan_page', { url });
+  // }
 
   /**
    * Lists the contents of a folder or the active torrents.
-   * @param {'folder' | 'torrent'} [content_type='folder'] - Type of content to list ('folder' or 'torrent'). Defaults to 'folder'.
-   * @param {number} [id] - The ID of the item to list. If `content_type` is 'folder' and `id` is omitted, lists the root folder. If `content_type` is 'torrent', lists the items under torrent.
-   * @returns {Promise<T.RFolderDetails>} Promise resolving the sub-items.
+   * @param {number} [content_id] - The ID of the item (folder) to list. If `content_type` is 'folder' and `id` is omitted, lists the root folder. If `content_type` is 'torrent', lists the items under torrent.
+   * @returns {Promise<T.RListingDetails>} Promise resolving the sub-items.
    */
-  list(
-    content_type: 'folder' | 'torrent' = 'folder',
-    id?: number
-  ): Promise<T.RFolderDetails> {
-    const body: Record<string, unknown> = { content_type };
-    if (id) body.content_id = id;
-    return this.callFunc<T.RFolderDetails>('list_contents', body);
+  list(content_id?: number): Promise<T.RListingDetails> {
+    return this.callFunc<T.RListingDetails>('list_contents', {
+      content_id,
+    });
   }
 
   /**
@@ -162,6 +151,7 @@ export class Seedr {
     return this.callFunc<T.RSearchResults>('search_files', { search_query });
   }
 
+  // TODO: Handle direct download of the file
   /**
    * Fetches the direct download URL for a file.
    * @param {number} folder_file_id - The ID of the file (note: this is `folder_file_id` from the `list` results, not `file_id`).
@@ -182,21 +172,23 @@ export class Seedr {
 
   /**
    * Renames a folder or a file.
-   * Only one of `folder_id` or `file_id` should be provided.
+   * Only one of `folder_id`, `folder_file_id`, `torrent_id` should be provided.
    * @protected
    * @param {object} options - The rename options.
    * @param {string} options.rename_to - The new name for the item.
-   * @param {number} [options.folder_id - The ID of the folder to rename.
-   * @param {number} [options.file_id] - The ID of the file to rename (use `folder_file_id`).
+   * @param {number} [options.folder_id] - The ID of the folder to rename.
+   * @param {number} [options.folder_file_id] - The ID of the file to rename.
+   * @param {number} [options.torrent_id] - The ID of the file to rename.
    * @returns {Promise<T.SeedrSuccess>} Promise resolving if successful.
    * @throws {Error} Throws an error if both `folder_id` and `file_id` are provided.
    */
   protected renameItem(options: {
     rename_to: string;
     folder_id?: number;
-    file_id?: number;
+    folder_file_id?: number;
+    torrent_id?: number;
   }): Promise<T.SeedrSuccess> {
-    if (options.folder_id && options.file_id)
+    if (options.folder_id && options.folder_file_id && options.torrent_id)
       throw new Error('More Arguments supplied than expected');
     return this.callFunc<T.SeedrSuccess>('rename', options);
   }
@@ -215,14 +207,15 @@ export class Seedr {
     });
   }
 
-  /**
-   * Removes an item from the user's wishlist.
-   * @param {number} id - The ID of the wishlist item to remove.
-   * @returns {Promise<{ result: true }>} Promise resolving if successful.
-   */
-  deleteWishlistItem(id: number): Promise<{ result: true }> {
-    return this.callFunc<{ result: true }>('remove_wishlist', { id });
-  }
+  // // DISABLED: func not found.
+  // /**
+  //  * Removes an item from the user's wishlist.
+  //  * @param {number} id - The ID of the wishlist item to remove.
+  //  * @returns {Promise<{ result: true }>} Promise resolving if successful.
+  //  */
+  // deleteWishlistItem(id: number): Promise<{ result: true }> {
+  //   return this.callFunc<{ result: true }>('remove_wishlist', { id });
+  // }
 
   /**
    * Tests the validity of the current access token.
@@ -256,10 +249,9 @@ export class Seedr {
     return this.callFunc<T.RMemoryBandwidth>('get_memory_bandwidth');
   }
 
-  // // DISABLED: The Returned URL is invalid.
+  // // DISABLED: func not found.
   // /**
   //  * Creates an archive (zip file) of specified folders and files.
-  //  * Note: The Returned URL is invalid.
   //  * @param {object} ids - Object containing arrays of folder and file IDs.
   //  * @param {number[]} [ids.folder] - Array of folder IDs to include.
   //  * @param {number[]} [ids.file] - Array of file IDs (`folder_file_id`) to include.
@@ -274,12 +266,12 @@ export class Seedr {
   //       return { type: 'file', id };
   //     }),
   //   ];
-  //   return this.callFunc<T.RCreateArchive>('create_empty_archive', {
+  //   return this.callFunc<T.RCreateArchive>('create_archive', {
   //     archive_arr: JSON.stringify(items),
   //   });
   // }
 
-  // // DISABLED: Always returns failure
+  // // DISABLED: func not found
   // /**
   //  * Changes the user's full name. Requires current password.
   //  * @param {string} fullname - The new full name.
@@ -294,10 +286,9 @@ export class Seedr {
   //   });
   // }
 
-  // // DISABLED: Returns error on success
+  // // DISABLED: func not found
   // /**
   //  * Changes the user's password.
-  //  * Note: Works, but returns HTTP 500 Status.
   //  * @param {string} new_password - The new password.
   //  * @param {string} password - The user's current password.
   //  * @returns {Promise<T.RSearchResults>} Promise resolving if successful.
