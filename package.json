@@ -1,6 +1,6 @@
 {
   "name": "seedr-js",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Unofficial Seedr API for Node.js",
   "type": "module",
   "main": "dist/index.js",
