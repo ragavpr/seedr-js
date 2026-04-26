@@ -29,15 +29,17 @@ export interface IStore {
 }
 
 export type AuthState = {
-  access?: {
-    token: string;
-    expiry: number;
+  oauth?: {
+    access: {
+      token: string;
+      expiry: number;
+    };
+    refresh: {
+      token: string;
+      expiry?: number;
+    };
   };
-  refresh?: {
-    token: string;
-    expiry?: number;
-  };
-    credential?: {
+  credential?: {
     username: string;
     password: string;
   };

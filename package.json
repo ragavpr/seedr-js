@@ -34,6 +34,7 @@
   "dependencies": {
     "formdata-node": "^6.0.3",
     "fs-extra": "^11.3.0",
-    "got": "^14.4.7"
+    "got": "^14.4.7",
+    "inquirer": "^13.4.2"
   }
 }

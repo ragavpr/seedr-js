@@ -30,10 +30,12 @@ export class FilePersistence implements T.IStore {
   }
 
   load(): T.AuthState {
-    if (!fs.existsSync(this.path)) {
+    try {
+      return fs.readJSONSync(this.path);
+    } catch (e) {
       fs.ensureFileSync(this.path);
       fs.writeJSONSync(this.path, {});
+      return {};
     }
-    return fs.readJSONSync(this.path);
   }
 }
