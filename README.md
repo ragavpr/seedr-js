@@ -76,7 +76,7 @@ export, which is demonstrated below.
 Can be used without persistence too (uses `NoPersistence` by default)
 
 ```ts
-import { Seedr } from 'seedr-js';
+import { Seedr, FilePersistence } from 'seedr-js';
 
 const AUTH_STATE_PATH = './auth_state.json';
 
@@ -133,6 +133,8 @@ is an instance of `Seedr` class)
 **Resource**
 
 - `seedr.callFunc(func, form?, body?)`
+- `seedr.waitForProgress(progress_url, timeout?)`
+- `seedr.addTorrent(uri?)` [Interactive]
 - `seedr.addTorrentMagnet(torrent_magnet)`
 - `seedr.addTorrentURL(torrent_url)`
 - `seedr.addTorrentFromWishlist(wishlist_id)`
@@ -155,8 +157,8 @@ is an instance of `Seedr` class)
 
 - `seedr.auth.loginOAuth(username, password)`
 - `seedr.auth.refreshTokenOAuth()`
-- `seedr.auth.authFlowOAuth()`
-- `seedr.auth.getAccessToken()`
+- `seedr.auth.authFlowOAuth(username?, password?, save?)` [Interactive]
+- `seedr.auth.getAccessToken(credentials?)`
 
 ## Contributing
 
