@@ -12,14 +12,6 @@ export type SeedrSuccess = {
   code?: number;
 };
 
-export type RDeviceGen = {
-  expires_in: number;
-  interval: number;
-  device_code: string;
-  user_code: string;
-  verification_url: string;
-};
-
 export type RTokenFetch = RTokenRefresh & {
   refresh_token: string;
 };
@@ -45,12 +37,7 @@ export type AuthState = {
     token: string;
     expiry?: number;
   };
-  xbmc?: {
-    device_code: string;
-    user_code: string;
-    expiry: number;
-  };
-  credential?: {
+    credential?: {
     username: string;
     password: string;
   };

@@ -115,85 +115,6 @@ export class Auth {
   }
 
   /**
-   * Initial Flow to Register XBMC device with Seedr.
-   * Use the generated code to authorize in https://www.seedr.cc/devices
-   * @returns {Promise<T.RDeviceGen>} Promise resolving newly generated XBMC Code.
-   * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
-   */
-  async obtainDeviceCode(): Promise<T.RDeviceGen> {
-    if (!this.#auth) this.#auth = await this.#store.load();
-    if (this.#auth.xbmc) {
-      if (Date.now() < this.#auth.xbmc.expiry) {
-        throw new Error(
-          `Device code is valid, yet to be authorized, use ${
-            this.#auth.xbmc.user_code
-          } in https://www.seedr.cc/devices`
-        );
-      } else {
-        throw new Error('Device Code already registered');
-      }
-    }
-    const response = await got.get<T.Either<T.RDeviceGen, unknown>>(
-      `${ENDPOINT}/api/device/code`,
-      {
-        searchParams: {
-          client_id: 'seedr_xbmc',
-        },
-        responseType: 'json',
-      }
-    );
-    if (response.statusCode != 200) {
-      throw new Error(JSON.stringify(response.body));
-    }
-    this.#auth.xbmc = {
-      device_code: response.body.device_code,
-      user_code: response.body.user_code,
-      expiry: response.body.expires_in * 1000 + Date.now(),
-    };
-    await this.#store.save(this.#auth);
-    return response.body;
-  }
-
-  /**
-   * Refreshes Access Token (XBMC) using Device Code.
-   * Obtains a new long validity Access Token.
-   * @returns {Promise<T.RTokenRefresh>} Promise resolving new Access Token.
-   * @throws {Error} If the API returns a non-200 status code or an error key in the response object.
-   */
-  async refreshTokenXBMC(): Promise<T.RTokenRefresh> {
-    if (!this.#auth) this.#auth = await this.#store.load();
-    if (!this.#auth.xbmc) {
-      throw new Error('No device code, generate code and authorize');
-    }
-    const response = await got.get<T.Either<T.RTokenRefresh, T.SeedrError>>(
-      'https://www.seedr.cc/api/device/authorize',
-      {
-        searchParams: {
-          device_code: this.#auth.xbmc.device_code,
-          client_id: 'seedr_xbmc',
-        },
-        responseType: 'json',
-      }
-    );
-    if (response.body.error == 'authorization_pending') {
-      throw new Error(
-        `Device code is valid, yet to be authorized, use ${
-          this.#auth.xbmc.user_code
-        } in https://www.seedr.cc/devices`
-      );
-    } else
-      Object.assign(this.#auth.xbmc, {
-        expiry: undefined,
-      });
-    this.#auth.access = {
-      token: response.body.access_token,
-      expiry: Date.now() + response.body.expires_in * 1000,
-    };
-    await this.#store.save(this.#auth);
-    return response.body;
-  }
-
-  /**
    * Makes sure an Access Token is available and valid, if not attempts to get a new one.
    * @returns {Promise<string>} Promise resolving new Access Token.
    * @throws {Error} If an existing token is invalid and a new Access Token cannot be obtained.
@@ -207,15 +128,7 @@ export class Auth {
         console.warn('Token expired');
       }
     }
-    if (this.#auth.xbmc && !(this.#auth.xbmc.expiry < Date.now())) {
-      console.log('Refreshing Token with XBMC');
-      try {
-        await this.refreshTokenXBMC();
-      } catch (e) {
-        console.warn(`Refresh (XBMC) failed: ${(e as Error).message}`);
-      }
-    }
-    if (this.#auth.refresh) {
+        if (this.#auth.refresh) {
       console.log('Refreshing Token with OAuth');
       try {
         await this.refreshTokenOAuth();
