@@ -132,33 +132,33 @@ is an instance of `Seedr` class)
 
 **Resource**
 
-- `seedr.callFunc(func, form?, body?)`
+- `seedr.callFunc(func, form?, body?)` ⭐
 - `seedr.waitForProgress(progress_url, timeout?)`
-- `seedr.addTorrent(uri?)` [Interactive]
+- `seedr.torrentFlow(uri?)` ⭐ [Interactive]
 - `seedr.addTorrentMagnet(torrent_magnet)`
 - `seedr.addTorrentURL(torrent_url)`
 - `seedr.addTorrentFromWishlist(wishlist_id)`
-- `seedr.list(content_id?)`
+- `seedr.list(content_id?)` ⭐
 - `seedr.searchFiles(search_query)`
-- `seedr.fetchFile(folder_file_id)`
+- `seedr.fetchFile(folder_file_id)` ⭐
 - `seedr.addFolder(name)`
 - `seedr.renameFolder(id, rename_to)`
 - `seedr.renameFile(id, rename_to)`
 - `seedr.renameTorrent(id, rename_to)`
 - `seedr.delete(ids: {folder: [], file: [], torrent: []})`
-- `seedr.deleteAll()`
+- `seedr.deleteAll()` ⭐
 - `seedr.getWishlist()`
 - `seedr.testToken()`
 - `seedr.getDevices()`
 - `seedr.getAccountInfo()`
-- `seedr.getUsage()`
+- `seedr.getUsage()` ⭐
 
 **Auth** (automatically handled)
 
 - `seedr.auth.loginOAuth(username, password)`
 - `seedr.auth.refreshTokenOAuth()`
 - `seedr.auth.authFlowOAuth(username?, password?, save?)` [Interactive]
-- `seedr.auth.getAccessToken(credentials?)`
+- `seedr.auth.getAccessToken(credentials?)` ⭐
 
 ## Contributing
 

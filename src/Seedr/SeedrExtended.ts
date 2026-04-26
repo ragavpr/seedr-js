@@ -19,7 +19,10 @@ export class SeedrExtended extends Seedr {
    * @param {number} timeout_ms maximum wait time for a response.
    * @returns {Promise<T.HProgress>} Promise resolving the final completed progress.
    */
-  async waitForProgress(progress_url: string, timeout_ms: number = 30000): Promise<T.HProgress> {
+  async waitForProgress(
+    progress_url: string,
+    timeout_ms: number = 30000
+  ): Promise<T.HProgress> {
     let last_progress = 0;
     let timeout = Date.now() + timeout_ms;
     while (timeout > Date.now()) {
@@ -53,7 +56,7 @@ export class SeedrExtended extends Seedr {
    * @returns {Promise<void>} Promise resolving with the result of the add operation.
    * @throws {Error} If not exactly one of `torrent_magnet`, `torrent_file`, `torrent_url`, or `wishlist_id` is defined.
    */
-  async torrentFlow(uri: string): Promise<void> {
+  async torrentFlow(uri?: string): Promise<void> {
     const validate = (input: string) => {
       const magnetRegex = /^magnet:\?xt=urn:btih:[0-9a-fA-F]{40}(&[^&]*)*$/;
       const httpRegex = /^https?:\/\/[^\s]+$/;
@@ -72,6 +75,9 @@ export class SeedrExtended extends Seedr {
           validate,
         },
       ]));
+      if (!uri) {
+        throw new Error('URI Empty unexpected.');
+      }
     }
     const isMagnet = /^magnet:\?xt=urn:btih:[0-9a-fA-F]{40}(&[^&]*)*$/.test(
       uri
