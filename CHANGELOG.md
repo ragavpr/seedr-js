@@ -1,5 +1,20 @@
 # seedr-js
 
+## 1.2.0
+
+### Minor Changes
+
+- 0b9a4ba: Feat: Interactive addTorrent method
+- 8e6ce22: Remove XBMC auth flow
+- 41eab08: Seedr Resource API changes
+- 8fa57ae: Seamless OAuth flow, optionally interactive.
+
+### Patch Changes
+
+- 5c275d8: Document updated `ReadMe`
+- cf66e5b: Improved requests and better auth handling.
+- 049559b: Reorganize project structure
+
 ## 1.1.0
 
 ### Minor Changes
